@@ -115,17 +115,6 @@ El proyecto está optimizado para correr en contenedores ligeros usando `python:
 
 ---
 
-## 📸 Capturas de Pantalla (Conceptuales)
-
-> *Nota: Aquí puedes agregar imágenes reales de tu aplicación.*
-
-1.  **Menú Principal:** Selección entre Transporte y Simplex.
-2.  **Matriz de Transporte:** Editor tipo Excel para ingresar costos, oferta y demanda.
-3.  **Resolución Vogel:** Tabla con penalizaciones laterales e inferiores, resaltando la decisión del algoritmo.
-4.  **Tabla Simplex:** Iteraciones con resaltado de pivotes.
-
----
-
 ## ✒️ Autor
 
 **StalkerData**
