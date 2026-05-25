@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import plotly.graph_objects as go
+
 
 # --- IMPORTACIONES DE MODELOS ---
 # Transporte
@@ -9,6 +11,8 @@ from Modelos.EsquinaNoroeste import EsquinaNoroeste
 from Modelos.Vogel import Vogel
 # Simplex (Tu lógica)
 from Metodo.simplex_logic import SimplexSolver
+from Metodo.big_m_logic import BigMSolver
+from Metodo.grapher_logic import GrapherLogic
 
 class UI:
     def __init__(self):
@@ -35,6 +39,9 @@ class UI:
         if 'num_rest' not in st.session_state: st.session_state['num_rest'] = 2
         if 'solver_history' not in st.session_state: st.session_state['solver_history'] = None
         if 'current_step' not in st.session_state: st.session_state['current_step'] = 0
+
+        if 'grapher_page' not in st.session_state: 
+            st.session_state.grapher_page = 1
 
     # --- NAVEGACIÓN GLOBAL ---
     def ir_a_home(self):
@@ -69,104 +76,156 @@ class UI:
         
         st.info("Seleccione el módulo que desea utilizar:")
         
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         with col1:
             if st.button("🚚 Métodos de Transporte", type="primary", use_container_width=True):
                 self.ir_a_transporte()
         with col2:
             if st.button("📐 Método Simplex", type="primary", use_container_width=True):
                 self.ir_a_simplex()
+        with col3:
+            if st.button("📈 Graficadora Lineal", type="primary", use_container_width=True):
+                st.session_state.seccion_app = 'Grapher'
+                st.session_state.grapher_page = 1
+                st.rerun()
 
     # =========================================================================
-    # SECCIÓN 2: MÓDULO SIMPLEX (TU CÓDIGO INTEGRADO)
+    # SECCIÓN 2: MÓDULO OPTIMIZACIÓN LINEAL (SIMPLEX & GRAN M)
     # =========================================================================
     def simplex_navegar(self, page_num):
         st.session_state['simplex_page'] = page_num
         st.rerun()
 
-    def mostrar_simplex_config(self):
-        st.title("📐 Método Simplex - Configuración")
-        st.markdown("Bienvenido. Esta herramienta te ayudará a resolver problemas de **Minimizar** paso a paso.")
+    # --- PÁGINA 1: SELECCIÓN DE MÉTODO ---
+    def mostrar_simplex_seleccion(self):
+        st.title("📐 Módulo de Optimización Lineal")
+        st.write("Seleccione el método que desea utilizar:")
         
         col1, col2 = st.columns(2)
         with col1:
-            st.session_state['num_vars'] = st.number_input("Número de Variables (Xn)", min_value=1, max_value=10, value=st.session_state['num_vars'])
+            st.subheader("Simplex Clásico")
+            st.write("Para problemas estándar de **Maximización** con restricciones **≤**.")
+            if st.button("Elegir Simplex Clásico", use_container_width=True):
+                st.session_state.simplex_type = 'Clasico'
+                st.session_state.simplex_mode = 'max'
+                self.simplex_navegar(1.5) # Ir a Configuración
+                
         with col2:
-            st.session_state['num_rest'] = st.number_input("Número de Restricciones", min_value=1, max_value=10, value=st.session_state['num_rest'])
+            st.subheader("Método de la Gran M")
+            st.write("Para problemas de **Max/Min** con cualquier restricción (≤, ≥, =).")
+            if st.button("Elegir Gran M", use_container_width=True):
+                st.session_state.simplex_type = 'BigM'
+                self.simplex_navegar(1.5) # Ir a Configuración
+
+        if st.button("🏠 Volver al Inicio"):
+            self.ir_a_home()
+
+    # --- PÁGINA 1.5: CONFIGURACIÓN (VARS Y REST) ---
+    def mostrar_simplex_config(self):
+        tipo = st.session_state.get('simplex_type', 'Clasico')
+        st.title(f"⚙️ Configuración: {'Simplex Clásico' if tipo == 'Clasico' else 'Gran M'}")
+        
+        if tipo == 'BigM':
+            mode = st.radio("Objetivo del modelo:", ["Maximizar", "Minimizar"], horizontal=True)
+            st.session_state['simplex_mode'] = 'max' if mode == "Maximizar" else 'min'
+        else:
+            st.info("El Simplex Clásico está configurado para Maximización (Estándar).")
+            st.session_state['simplex_mode'] = 'max'
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.session_state['num_vars'] = st.number_input("Número de Variables (Xn)", 1, 10, st.session_state.get('num_vars', 2))
+        with col2:
+            st.session_state['num_rest'] = st.number_input("Número de Restricciones", 1, 10, st.session_state.get('num_rest', 2))
         
         st.write("")
         c1, c2 = st.columns([1, 4])
         with c1:
-            if st.button("🏠 Inicio"): self.ir_a_home()
+            if st.button("⬅️ Atrás"): self.simplex_navegar(1)
         with c2:
             if st.button("Crear Modelo ➡️", type="primary"):
                 self.simplex_navegar(2)
 
+    # --- PÁGINA 2: INGRESO DE DATOS (ADAPTATIVO) ---
     def mostrar_simplex_ingreso(self):
-        st.title("📝 Definición del Modelo")
-        st.markdown("Ingresa los coeficientes. Si dejas un campo vacío o en 0, se tomará como nulo.")
-
+        tipo = st.session_state.get('simplex_type', 'Clasico')
+        modo = st.session_state.get('simplex_mode', 'max')
         num_vars = st.session_state['num_vars']
         num_rest = st.session_state['num_rest']
+        
+        st.title(f"📝 Definición: {'Simplex Clásico' if tipo == 'Clasico' else 'Gran M'}")
+        label_z = "Maximizar Z" if modo == 'max' else "Minimizar Z"
 
         with st.form("simplex_form"):
-            st.subheader("Función Objetivo (Max Z)")
+            st.subheader(f"Función Objetivo ({label_z})")
             cols_z = st.columns(num_vars)
             coef_z = []
             for i in range(num_vars):
                 with cols_z[i]:
-                    val = st.number_input(f"X{i+1}", key=f"z_{i}", value=0.0)
+                    val = st.number_input(f"X{i+1}", key=f"z_{i}", value=0.0, format="%.2f")
                     coef_z.append(val)
             
             st.divider()
             st.subheader("Restricciones (Sujeto a:)")
             
-            matrix_a = []
-            vector_b = []
+            matrix_a, vector_b, ops = [], [], []
 
             for i in range(num_rest):
                 st.markdown(f"**Restricción {i+1}**")
                 cols_r = st.columns(num_vars + 2)
                 row_coeffs = []
+                
                 for j in range(num_vars):
                     with cols_r[j]:
-                        val = st.number_input(f"Coef X{j+1}", key=f"r_{i}_{j}", value=0.0, label_visibility="collapsed")
-                        st.caption(f"X{j+1}")
-                        row_coeffs.append(val)
+                        val = st.number_input(f"Coef X{j+1}", key=f"r_{i}_{j}", value=0.0, label_visibility="collapsed", format="%.2f")
+                        st.caption(f"X{j+1}"); row_coeffs.append(val)
+                
+                # --- LÓGICA DE OPERADOR ---
                 with cols_r[num_vars]:
-                    st.markdown("### ≤")
+                    if tipo == 'Clasico':
+                        st.markdown("### ≤")
+                        ops.append("<=")
+                    else:
+                        op = st.selectbox("Op", ["<=", ">=", "="], key=f"op_{i}", label_visibility="collapsed")
+                        ops.append(op)
+                
                 with cols_r[num_vars+1]:
-                    rhs = st.number_input("RHS", key=f"rhs_{i}", value=0.0, label_visibility="collapsed")
-                    st.caption("Límite")
-                    vector_b.append(rhs)
+                    rhs = st.number_input("RHS", key=f"rhs_{i}", value=0.0, label_visibility="collapsed", format="%.2f")
+                    st.caption("Límite"); vector_b.append(rhs)
+                
                 matrix_a.append(row_coeffs)
 
             st.divider()
             c1, c2, c3 = st.columns([1, 1, 2])
             with c1:
-                if st.form_submit_button("⬅️ Regresar"): self.simplex_navegar(1)
+                if st.form_submit_button("⬅️ Regresar"): self.simplex_navegar(1.5)
             with c2:
                 if st.form_submit_button("Limpiar"): st.rerun()
             with c3:
                 solve_clicked = st.form_submit_button("Resolver y Ver Tabla 🚀", type="primary")
 
         if solve_clicked:
-            solver = SimplexSolver(coef_z, matrix_a, vector_b)
-            history = solver.solve()
-            st.session_state['solver_history'] = history
+            if tipo == 'Clasico':
+                from Metodo.simplex_logic import SimplexSolver
+                solver = SimplexSolver(coef_z, matrix_a, vector_b)
+            else:
+                from Metodo.big_m_logic import BigMSolver
+                solver = BigMSolver(coef_z, matrix_a, vector_b, ops, mode=modo)
+            
+            st.session_state['solver_history'] = solver.solve()
             st.session_state['current_step'] = 0
             self.simplex_navegar(3)
 
+    # --- PÁGINA 3: RESULTADOS (COMÚN PARA AMBOS) ---
     def mostrar_simplex_resultados(self):
-        st.title("📊 Iteraciones Simplex")
-        
+        st.title("📊 Iteraciones")
         history = st.session_state['solver_history']
         curr = st.session_state['current_step']
         total_steps = len(history)
         step_data = history[curr]
         
         st.progress((curr + 1) / total_steps)
-        st.caption(f"Iteración {step_data['iteracion']} de {total_steps - 1} (aprox)")
+        st.caption(f"Iteración {step_data['iteracion']} de {total_steps - 1}")
 
         if "Solución Óptima" in step_data['mensaje']:
             st.success(f"🎉 {step_data['mensaje']}")
@@ -174,7 +233,6 @@ class UI:
             st.info(f"ℹ️ {step_data['mensaje']}")
 
         df = step_data['df']
-        
         if step_data['pivote_info']:
             fila_idx, col_idx = step_data['pivote_info']
             def highlight_pivot(x):
@@ -185,12 +243,7 @@ class UI:
                 df_styler.iloc[:, col_idx] = style_relacionado
                 df_styler.iloc[fila_idx, col_idx] = style_pivote
                 return df_styler
-
             st.dataframe(df.style.apply(highlight_pivot, axis=None).format("{:.2f}"), use_container_width=True)
-            st.markdown(f"""
-            - **Variable que Entra (Columna):** {step_data['df'].columns[col_idx]}
-            - **Variable que Sale (Fila):** {step_data['df'].index[fila_idx]}
-            """)
         else:
             st.dataframe(df.style.format("{:.2f}"), use_container_width=True)
 
@@ -203,7 +256,7 @@ class UI:
             with sc2:
                 st.write("Variables de Decisión:")
                 for k, v in sol.items():
-                    if k != "Z" and not k.startswith("S"):
+                    if k != "Z" and not k.startswith("S") and not k.startswith("A") and not k.startswith("E"):
                         st.write(f"**{k}** = {v:.4f}")
 
         st.divider()
@@ -219,7 +272,7 @@ class UI:
                     st.rerun()
         with b4:
             if curr < total_steps - 1:
-                if st.button("Siguiente Iteración ➡️", type="primary"):
+                if st.button("Siguiente ➡️", type="primary"):
                     st.session_state['current_step'] += 1
                     st.rerun()
 
@@ -403,6 +456,111 @@ class UI:
             if st.button(lbl, type="primary", disabled=es_ultimo):
                 st.session_state.paso_actual += 1
                 st.rerun()
+ 
+    # =========================================================================
+    # SECCIÓN 4: GRAFICO
+    # =========================================================================
+    def mostrar_grapher_config(self):
+        st.title("📈 Graficadora de Región Factible")
+        st.info("Esta herramienta grafica sistemas de 2 variables (X1, X2) con N restricciones.")
+        num_rest = st.number_input("¿Cuántas restricciones tiene su sistema?", 1, 10, 2)
+        
+        c1, c2 = st.columns([1, 4])
+        if c1.button("🏠 Inicio"): self.ir_a_home()
+        if c2.button("Definir Funciones ➡️", type="primary"):
+            st.session_state.num_rest_graph = num_rest
+            st.session_state.grapher_page = 2
+            st.rerun()
+
+    def mostrar_grapher_ingreso(self):
+        st.title("📝 Ingreso de Funciones")
+        n = st.session_state.num_rest_graph
+        
+        with st.form("graph_form"):
+            matrix_a, vector_b, ops = [], [], []
+            for i in range(n):
+                cols = st.columns([2, 2, 1, 2])
+                with cols[0]: x1 = st.number_input(f"X1", key=f"gx1_{i}", value=1.0)
+                with cols[1]: x2 = st.number_input(f"X2", key=f"gx2_{i}", value=1.0)
+                with cols[2]: op = st.selectbox("", ["<=", ">=", "="], key=f"gop_{i}")
+                with cols[3]: b = st.number_input(f"RHS", key=f"gb_{i}", value=10.0)
+                matrix_a.append([x1, x2]); vector_b.append(b); ops.append(op)
+            
+            if st.form_submit_button("Generar Gráfica 📊", type="primary"):
+                st.session_state.graph_data = {"A": np.array(matrix_a), "b": np.array(vector_b), "ops": ops}
+                st.session_state.grapher_page = 3
+                st.rerun()
+        if st.button("⬅️ Atrás"): 
+            st.session_state.grapher_page = 1
+            st.rerun()
+
+    def mostrar_grapher_resultado(self):
+        st.title("📊 Resultado Gráfico")
+        
+        if 'graph_data' not in st.session_state:
+            st.error("No hay datos para graficar.")
+            if st.button("Volver"): self.ir_a_home()
+            return
+
+        data = st.session_state.graph_data
+        A, b, ops = data["A"], data["b"], data["ops"]
+        
+        # 1. Hallar puntos
+        todos_puntos = GrapherLogic.hallar_intersecciones(A, b)
+        puntos_factibles = [p for p in todos_puntos if GrapherLogic.es_factible(p, A, b, ops)]
+        
+        # 2. Crear Gráfico
+        fig = go.Figure()
+        
+        # Rango de visión
+        limite = np.max(b) * 1.2 if len(b) > 0 and np.max(b) > 0 else 10
+        x_plot = np.linspace(0, limite, 400)
+
+        for i in range(len(b)):
+            if A[i, 1] != 0: # Línea normal
+                y_plot = (b[i] - A[i, 0] * x_plot) / A[i, 1]
+                # Filtrar valores negativos para que el gráfico no se vea mal
+                y_plot[y_plot < 0] = np.nan 
+                fig.add_trace(go.Scatter(x=x_plot, y=y_plot, name=f"R{i+1}: {ops[i]} {b[i]}", mode='lines'))
+            else: # Línea vertical
+                x_val = b[i] / A[i, 0]
+                fig.add_vline(x=x_val, line_width=2, line_dash="dash", line_color="red")
+
+        # Dibujar vértices factibles
+        if puntos_factibles:
+            px, py = zip(*puntos_factibles)
+            fig.add_trace(go.Scatter(
+                x=px, y=py, mode='markers+text', 
+                marker=dict(size=12, color='black', symbol='diamond'),
+                text=[f"({x},{y})" for x,y in puntos_factibles],
+                textposition="top center",
+                name="Vértices Factibles"
+            ))
+
+        fig.update_layout(
+            xaxis=dict(title="Variable X1", range=[0, limite]),
+            yaxis=dict(title="Variable X2", range=[0, limite]),
+            height=600
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+        # 3. Tabla de Puntos
+        st.subheader("📍 Análisis de Vértices")
+        df_puntos = pd.DataFrame(todos_puntos, columns=["X1", "X2"])
+        df_puntos["¿Es Factible?"] = [GrapherLogic.es_factible(p, A, b, ops) for p in todos_puntos]
+        
+        # Ordenar para que los factibles salgan primero
+        df_puntos = df_puntos.sort_values(by="¿Es Factible?", ascending=False)
+        
+        st.dataframe(
+            df_puntos.style.applymap(lambda x: 'background-color: #90EE90; color: black' if x is True else '', subset=["¿Es Factible?"]),
+            use_container_width=True
+        )
+
+        if st.button("⬅️ Nueva Gráfica"):
+            st.session_state.grapher_page = 1
+            st.rerun()
+
 
     # =========================================================================
     # ROUTER PRINCIPAL
@@ -414,11 +572,11 @@ class UI:
             self.mostrar_home()
         
         elif seccion == 'Simplex':
-            # Router interno de Simplex
-            page = st.session_state['simplex_page']
-            if page == 1: self.mostrar_simplex_config()
-            elif page == 2: self.mostrar_simplex_ingreso()
-            elif page == 3: self.mostrar_simplex_resultados()
+            page = st.session_state.get('simplex_page', 1)
+            if page == 1: self.mostrar_simplex_seleccion()   # Selección de método
+            elif page == 1.5: self.mostrar_simplex_config()   # Configuración
+            elif page == 2: self.mostrar_simplex_ingreso()    # Matriz
+            elif page == 3: self.mostrar_simplex_resultados() # Tablas
             
         elif seccion == 'Transporte':
             # Router interno de Transporte
@@ -427,3 +585,9 @@ class UI:
             elif pagina == 'Modelo': self.mostrar_modelo_transporte()
             elif pagina == 'Matriz': self.mostrar_matriz_transporte()
             elif pagina == 'Resolver': self.mostrar_resolver_transporte()
+
+        elif seccion == 'Grapher':
+            g_page = st.session_state.grapher_page
+            if g_page == 1: self.mostrar_grapher_config()
+            elif g_page == 2: self.mostrar_grapher_ingreso()
+            elif g_page == 3: self.mostrar_grapher_resultado()
