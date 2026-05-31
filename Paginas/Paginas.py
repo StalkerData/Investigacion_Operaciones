@@ -9,10 +9,11 @@ import plotly.graph_objects as go
 from Modelos.CostoMinimo import CostoMinimo
 from Modelos.EsquinaNoroeste import EsquinaNoroeste
 from Modelos.Vogel import Vogel
-# Simplex (Tu lógica)
+# Simplex 
 from Metodo.simplex_logic import SimplexSolver
 from Metodo.big_m_logic import BigMSolver
 from Metodo.grapher_logic import GrapherLogic
+from Metodo.hungarian_logic import HungarianSolver
 
 class UI:
     def __init__(self):
@@ -43,6 +44,9 @@ class UI:
         if 'grapher_page' not in st.session_state: 
             st.session_state.grapher_page = 1
 
+        if 'hungaro_page' not in st.session_state: 
+            st.session_state.hungaro_page = 1
+
     # --- NAVEGACIÓN GLOBAL ---
     def ir_a_home(self):
         st.session_state.seccion_app = 'Home'
@@ -69,14 +73,14 @@ class UI:
         también métodos de optimización de costo como el Simplex.
         
         *   **Autor:** StalkerData 
-        *   **Versión:** 1.2.0 Prototipo
+        *   **Versión:** 1.8.0 Prototipo
         *   **Tecnología:** Python + NumPy + Streamlit
         *   **Github:** [https://github.com/StalkerData](https://github.com/StalkerData)
         """)
         
         st.info("Seleccione el módulo que desea utilizar:")
         
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         with col1:
             if st.button("🚚 Métodos de Transporte", type="primary", use_container_width=True):
                 self.ir_a_transporte()
@@ -87,6 +91,11 @@ class UI:
             if st.button("📈 Graficadora Lineal", type="primary", use_container_width=True):
                 st.session_state.seccion_app = 'Grapher'
                 st.session_state.grapher_page = 1
+                st.rerun()
+        with col4:
+            if st.button("🎭 Método Húngaro", type="primary", use_container_width=True):
+                st.session_state.seccion_app = 'Hungaro'
+                st.session_state.hungaro_page = 1
                 st.rerun()
 
     # =========================================================================
@@ -206,10 +215,8 @@ class UI:
 
         if solve_clicked:
             if tipo == 'Clasico':
-                from Metodo.simplex_logic import SimplexSolver
                 solver = SimplexSolver(coef_z, matrix_a, vector_b)
             else:
-                from Metodo.big_m_logic import BigMSolver
                 solver = BigMSolver(coef_z, matrix_a, vector_b, ops, mode=modo)
             
             st.session_state['solver_history'] = solver.solve()
@@ -277,7 +284,7 @@ class UI:
                     st.rerun()
 
     # =========================================================================
-    # SECCIÓN 3: MÓDULO TRANSPORTE (CÓDIGO PREVIO)
+    # SECCIÓN 3: MÓDULO TRANSPORTE 
     # =========================================================================
     def transporte_navegar(self, pagina):
         st.session_state.pagina = pagina
@@ -495,72 +502,152 @@ class UI:
             st.rerun()
 
     def mostrar_grapher_resultado(self):
-        st.title("📊 Resultado Gráfico")
-        
-        if 'graph_data' not in st.session_state:
-            st.error("No hay datos para graficar.")
-            if st.button("Volver"): self.ir_a_home()
-            return
 
+        st.title("📊 Resultado Gráfico")
         data = st.session_state.graph_data
         A, b, ops = data["A"], data["b"], data["ops"]
         
-        # 1. Hallar puntos
-        todos_puntos = GrapherLogic.hallar_intersecciones(A, b)
-        puntos_factibles = [p for p in todos_puntos if GrapherLogic.es_factible(p, A, b, ops)]
+        # 1. Hallar intersecciones (Solo entre funciones, sin ejes)
+        intersecciones = GrapherLogic.hallar_intersecciones_puras(A, b)
         
-        # 2. Crear Gráfico
+        # 2. Gráfica con etiquetas de coordenadas (3, 3)
         fig = go.Figure()
         
-        # Rango de visión
-        limite = np.max(b) * 1.2 if len(b) > 0 and np.max(b) > 0 else 10
-        x_plot = np.linspace(0, limite, 400)
+        max_val = np.max(b) if len(b) > 0 else 10
+        limit = max_val * 1.5
+        x_vals = np.linspace(0, limit, 200)
 
+        # Dibujar líneas de restricciones
         for i in range(len(b)):
-            if A[i, 1] != 0: # Línea normal
-                y_plot = (b[i] - A[i, 0] * x_plot) / A[i, 1]
-                # Filtrar valores negativos para que el gráfico no se vea mal
-                y_plot[y_plot < 0] = np.nan 
-                fig.add_trace(go.Scatter(x=x_plot, y=y_plot, name=f"R{i+1}: {ops[i]} {b[i]}", mode='lines'))
-            else: # Línea vertical
-                x_val = b[i] / A[i, 0]
-                fig.add_vline(x=x_val, line_width=2, line_dash="dash", line_color="red")
+            if A[i, 1] != 0:
+                y_vals = (b[i] - A[i, 0] * x_vals) / A[i, 1]
+                fig.add_trace(go.Scatter(
+                    x=x_vals, y=y_vals, 
+                    name=f"R{i+1}", 
+                    mode='lines'
+                ))
+            else: 
+                x_const = b[i] / A[i, 0]
+                fig.add_vline(x=x_const, line_dash="dash", annotation_text=f"R{i+1}")
 
-        # Dibujar vértices factibles
-        if puntos_factibles:
-            px, py = zip(*puntos_factibles)
+        # Dibujar puntos con etiquetas de texto (X, Y)
+        if intersecciones:
+            px, py = zip(*intersecciones)
             fig.add_trace(go.Scatter(
-                x=px, y=py, mode='markers+text', 
-                marker=dict(size=12, color='black', symbol='diamond'),
-                text=[f"({x},{y})" for x,y in puntos_factibles],
-                textposition="top center",
-                name="Vértices Factibles"
+                x=px, 
+                y=py, 
+                mode='markers+text', # Activamos marcadores y texto
+                text=[f"({p[0]}, {p[1]})" for p in intersecciones], # Generamos la etiqueta (3, 3)
+                textposition="top center", # Posición de la etiqueta
+                marker=dict(size=10,color='black'), # Color automático de Plotly
+                name="Intersecciones"
             ))
 
         fig.update_layout(
-            xaxis=dict(title="Variable X1", range=[0, limite]),
-            yaxis=dict(title="Variable X2", range=[0, limite]),
-            height=600
+            xaxis_title="X1", 
+            yaxis_title="X2",
+            xaxis_range=[0, limit],
+            yaxis_range=[0, limit]
         )
         st.plotly_chart(fig, use_container_width=True)
 
-        # 3. Tabla de Puntos
-        st.subheader("📍 Análisis de Vértices")
-        df_puntos = pd.DataFrame(todos_puntos, columns=["X1", "X2"])
-        df_puntos["¿Es Factible?"] = [GrapherLogic.es_factible(p, A, b, ops) for p in todos_puntos]
-        
-        # Ordenar para que los factibles salgan primero
-        df_puntos = df_puntos.sort_values(by="¿Es Factible?", ascending=False)
-        
-        st.dataframe(
-            df_puntos.style.applymap(lambda x: 'background-color: #90EE90; color: black' if x is True else '', subset=["¿Es Factible?"]),
-            use_container_width=True
-        )
+        # 3. Tabla de Puntos (Sin colores chillones)
+        st.subheader("📍 Puntos de Cruce entre Restricciones")
+        if not intersecciones:
+            st.warning("No se encontraron cruces entre las restricciones en el primer cuadrante.")
+        else:
+            df_puntos = pd.DataFrame(intersecciones, columns=["Coordenada X1", "Coordenada X2"])
+            
+            # Añadimos la columna de factibilidad con un diseño sobrio
+            df_puntos["Estado"] = [
+                "✅ Factible" if GrapherLogic.es_factible(p, A, b, ops) else "❌ No Factible" 
+                for p in intersecciones
+            ]
+            
+            # Mostramos la tabla con estilo minimalista
+            st.dataframe(df_puntos, use_container_width=True)
 
-        if st.button("⬅️ Nueva Gráfica"):
+        st.divider()
+        if st.button("⬅️ Volver a Configuración"):
             st.session_state.grapher_page = 1
             st.rerun()
 
+    # =========================================================================
+    # SECCIÓN 5: HUNGARO
+    # =========================================================================
+    def mostrar_hungaro_config(self):
+        st.title("🎭 Método Húngaro (Asignación)")
+        st.info("El método húngaro requiere una matriz cuadrada (N x N).")
+        n = st.number_input("Dimensión de la matriz (N)", 2, 15, 3)
+        
+        c1, c2 = st.columns([1, 4])
+        if c1.button("🏠 Inicio"): self.ir_a_home()
+        if c2.button("Construir Matriz 🏗️", type="primary"):
+            st.session_state.hungaro_dim = n
+            st.session_state.matriz_hungaro = pd.DataFrame(0, index=[f"Recurso {i+1}" for i in range(n)], columns=[f"Tarea {j+1}" for j in range(n)])
+            st.session_state.hungaro_page = 2
+            st.rerun()
+
+    def mostrar_hungaro_ingreso(self):
+        st.title("📝 Ingreso de Costos de Asignación")
+        df_input = st.data_editor(st.session_state.matriz_hungaro, use_container_width=True, height=300)
+        
+        c1, c2 = st.columns([1, 4])
+        if c1.button("⬅️ Atrás"): st.session_state.hungaro_page = 1; st.rerun()
+        if c2.button("Resolver Paso a Paso 🚀", type="primary"):
+            from Metodo.hungarian_logic import HungarianSolver
+            st.session_state.matriz_hungaro_orig = df_input.values.copy()
+            st.session_state.hungaro_pasos = HungarianSolver.resolver(df_input.values)
+            st.session_state.hungaro_paso_actual = 0
+            st.session_state.hungaro_page = 3
+            st.rerun()
+
+    def mostrar_hungaro_resolver(self):
+        pasos = st.session_state.hungaro_pasos
+        idx = st.session_state.hungaro_paso_actual
+        estado = pasos[idx]
+        matriz_orig = st.session_state.matriz_hungaro_orig
+        
+        st.title("📊 Resolución Paso a Paso")
+        st.info(f"💡 {estado['mensaje']}")
+
+        # Estilizado de la matriz
+        df_visual = pd.DataFrame(estado['matriz'], 
+                                index=[f"R{i+1}" for i in range(len(estado['matriz']))],
+                                columns=[f"T{j+1}" for j in range(len(estado['matriz']))])
+
+        def aplicar_estilos_hungaro(df):
+            estilos = pd.DataFrame('', index=df.index, columns=df.columns)
+            estilos[:] = 'text-align: center; vertical-align: middle; background-color: white; color: black;'
+            
+            # 1. Pintar Líneas (si existen en este paso)
+            if estado['lineas']:
+                for r in estado['lineas']['h']: estilos.iloc[r, :] = 'background-color: #ADD8E6; color: black;'
+                for c in estado['lineas']['v']: estilos.iloc[:, c] = 'background-color: #ADD8E6; color: black;'
+            
+            # 2. Pintar Asignación Final (Verde)
+            if 'asignacion' in estado:
+                for i in range(len(df)):
+                    for j in range(len(df.columns)):
+                        if estado['asignacion'][i, j] == 1:
+                            estilos.iloc[i, j] = 'background-color: #90EE90; color: black; font-weight: bold;'
+            return estilos
+
+        st.dataframe(df_visual.style.apply(aplicar_estilos_hungaro, axis=None).format("{:.0f}"), use_container_width=True)
+
+        # Cálculo de costo si es el final
+        if 'asignacion' in estado:
+            costo_total = np.sum(matriz_orig * estado['asignacion'])
+            st.success(f"💰 Costo Total de Asignación: {costo_total}")
+
+        # Navegación
+        c1, c2, c3, c4 = st.columns(4)
+        if c1.button("🏠 Inicio"): self.ir_a_home()
+        if c2.button("✏️ Editar"): st.session_state.hungaro_page = 2; st.rerun()
+        if c3.button("⏪ Anterior", disabled=idx==0): 
+            st.session_state.hungaro_paso_actual -= 1; st.rerun()
+        if c4.button("Siguiente ⏩", disabled=idx==len(pasos)-1, type="primary"): 
+            st.session_state.hungaro_paso_actual += 1; st.rerun()
 
     # =========================================================================
     # ROUTER PRINCIPAL
@@ -591,3 +678,11 @@ class UI:
             if g_page == 1: self.mostrar_grapher_config()
             elif g_page == 2: self.mostrar_grapher_ingreso()
             elif g_page == 3: self.mostrar_grapher_resultado()
+        
+        elif seccion == 'Hungaro':
+            h_page = st.session_state.hungaro_page
+            if h_page == 1: self.mostrar_hungaro_config()
+            elif h_page == 2: self.mostrar_hungaro_ingreso()
+            elif h_page == 3: self.mostrar_hungaro_resolver()
+
+        
