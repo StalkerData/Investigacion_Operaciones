@@ -9,7 +9,7 @@ from Modelos.CostoMinimo import CostoMinimo
 from Modelos.EsquinaNoroeste import EsquinaNoroeste
 from Modelos.Vogel import Vogel
 
-# Simplex
+# Metodos
 from Metodo.simplex_logic import SimplexSolver
 from Metodo.big_m_logic import BigMSolver
 from Metodo.grapher_logic import GrapherLogic
@@ -98,50 +98,65 @@ class UI:
     # =========================================================================
     # SECCIÓN 1: HOME (PANTALLA PRINCIPAL)
     # =========================================================================
+    # =========================================================================
+    # SECCIÓN 1: HOME (PANTALLA PRINCIPAL)
+    # =========================================================================
     def mostrar_home(self):
+        # Encabezado con estilo
         st.title("🚛 Investigación de Operaciones (IO)")
-        st.markdown("""
-        **Bienvenido.**
-        Esta aplicación permite resolver problemas de transporte mediante algoritmos clásicos de Investigación de Operaciones, 
-        también métodos de optimización de costo como el Simplex.
         
-        *   **Autor:** StalkerData 
-        *   **Versión:** 1.8.0
-        *   **Tecnología:** Python + NumPy + Streamlit
-        *   **Github:** [https://github.com/StalkerData](https://github.com/StalkerData)
+        st.markdown("""
+        ### ¡Bienvenido al Optimizador Integral!
+        Esta plataforma educativa permite resolver y visualizar, paso a paso, los algoritmos más importantes de la Investigación de Operaciones.
+        
+        ---
+        **Información del Proyecto:**
+        *   **Autor:** [StalkerData](https://github.com/StalkerData)
+        *   **Versión:** 2.0.0 (Stable Release)
+        *   **Stack:** Python 3.13 + NumPy + Pandas + Plotly + Streamlit
         """)
 
-        st.info("Seleccione el módulo que desea utilizar:")
+        st.divider()
+        st.subheader("🚀 Seleccione un Módulo de Trabajo")
 
+        # Layout de 5 columnas para los 5 módulos principales
         col1, col2, col3, col4, col5 = st.columns(5)
 
         with col1:
-            if st.button(
-                "📈 Graficadora Lineal", type="primary", use_container_width=True
-            ):
+            st.markdown("#### Gráfica")
+            if st.button("📈 Graficadora\nLineal", type="primary", use_container_width=True, help="Visualiza regiones factibles en 2D"):
                 st.session_state.seccion_app = "Grapher"
                 st.session_state.grapher_page = 1
                 st.rerun()
+
         with col2:
-            if st.button("📐 Método Simplex", type="primary", use_container_width=True):
+            st.markdown("#### Simplex")
+            if st.button("📐 Método\nSimplex / Gran M", type="primary", use_container_width=True, help="Optimización lineal con N variables"):
                 self.ir_a_simplex()
+
         with col3:
-            if st.button(
-                "🚚 Métodos de Transporte", type="primary", use_container_width=True
-            ):
+            st.markdown("#### Transporte")
+            if st.button("🚚 Modelos de\nTransporte", type="primary", use_container_width=True, help="Noroeste, Costo Mínimo y Vogel"):
                 self.ir_a_transporte()
+
         with col4:
-            if st.button("🎭 Método Húngaro", type="primary", use_container_width=True):
+            st.markdown("#### Asignación")
+            if st.button("🎭 Método\nHúngaro", type="primary", use_container_width=True, help="Optimización de asignación de tareas"):
                 st.session_state.seccion_app = "Hungaro"
                 st.session_state.hungaro_page = 1
                 st.rerun()
+
         with col5:
-            if st.button(
-                "🔄 Optimización MODI", type="primary", use_container_width=True
-            ):
+            st.markdown("#### Optimización")
+            if st.button("🔄 Optimización\nMODI", type="primary", use_container_width=True, help="Mejora de soluciones de transporte"):
                 st.session_state.seccion_app = "Modi"
                 st.session_state.modi_page = 1
                 st.rerun()
+
+        st.divider()
+        
+        # Pie de página informativo
+        st.caption("© 2024 StalkerData - Herramienta diseñada para fines académicos y profesionales.")
 
     # =========================================================================
     # SECCIÓN 2: MÓDULO OPTIMIZACIÓN LINEAL (SIMPLEX & GRAN M)
@@ -925,7 +940,7 @@ class UI:
 
     def mostrar_modi_resolver(self):
         if st.session_state.modi_costos_orig is None:
-            self.navegar_a("Home")
+            self.ir_a_home()
             return
 
         pasos = st.session_state.modi_pasos
