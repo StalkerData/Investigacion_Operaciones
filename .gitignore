@@ -1,9 +1,17 @@
-# --- Python ---
+# --- Python (General) ---
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+env/
+venv/
+.env
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# --- Distribución / Empaquetado ---
 build/
 develop-eggs/
 dist/
@@ -20,25 +28,32 @@ wheels/
 .installed.cfg
 *.egg
 
-# --- Entornos Virtuales ---
-.env
-.venv
-env/
-venv/
-ENV/
+# --- Herramientas de Calidad (Caché) ---
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints
 
 # --- Streamlit ---
-# Secretos y configuraciones locales no deben ir al repo
+# IMPORTANTE: secrets.toml SIEMPRE ignorado por seguridad
 .streamlit/secrets.toml
-.streamlit/config.toml
+# .streamlit/config.toml  <-- Comentado: Suele ser útil en el repo para mantener el diseño
 
-
-# --- IDEs ---
-.idea/
+# --- IDEs y Editores ---
 .vscode/
+.idea/
 *.swp
+*.swo
 .DS_Store
+Thumbs.db
 
-# --- Datos temporales (si los hubiera) ---
+# --- Contenedores y Dev (Opcional) ---
+# Si decides no usar devcontainers, puedes descomentar la siguiente línea:
+# .devcontainer/
+.dockerignore
+
+# --- Datos y Logs ---
+*.log
 *.csv
 *.xlsx
+*.sqlite3
