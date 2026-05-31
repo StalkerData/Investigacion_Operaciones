@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class EsquinaNoroeste:
     @staticmethod
     def resolver(costos, oferta, demanda):
@@ -9,11 +10,11 @@ class EsquinaNoroeste:
         # 1. Sanitización
         matriz_rutas = np.array(costos, dtype=float)
         matriz_rutas[np.isnan(matriz_rutas)] = np.inf
-        
+
         oferta_rest = np.array(oferta, dtype=int)
         demanda_rest = np.array(demanda, dtype=int)
         asignacion = np.zeros_like(matriz_rutas, dtype=int)
-        
+
         filas, cols = matriz_rutas.shape
         i, j = 0, 0
         paso = 0
@@ -24,9 +25,9 @@ class EsquinaNoroeste:
             "asignacion": asignacion.copy(),
             "oferta": oferta_rest.copy(),
             "demanda": demanda_rest.copy(),
-            "costos": matriz_rutas.copy(), # Para ver bloqueos
+            "costos": matriz_rutas.copy(),  # Para ver bloqueos
             "seleccion": None,
-            "mensaje": "Estado Inicial"
+            "mensaje": "Estado Inicial",
         }
 
         # 2. Bucle
@@ -35,7 +36,7 @@ class EsquinaNoroeste:
             disp_actual = oferta_rest[i]
             req_actual = demanda_rest[j]
             es_bloqueada = matriz_rutas[i, j] == np.inf
-            
+
             cantidad = 0
             mensaje = ""
 
@@ -50,15 +51,15 @@ class EsquinaNoroeste:
             asignacion[i, j] = cantidad
             oferta_rest[i] -= cantidad
             demanda_rest[j] -= cantidad
-            
+
             # Guardamos coordenadas actuales antes de movernos
             coord_actual = (i, j)
 
             # Decisión de movimiento
             if disp_actual <= req_actual:
-                i += 1 # Bajamos
+                i += 1  # Bajamos
             else:
-                j += 1 # Derecha
+                j += 1  # Derecha
 
             # Yield del paso
             yield {
@@ -67,6 +68,6 @@ class EsquinaNoroeste:
                 "oferta": oferta_rest.copy(),
                 "demanda": demanda_rest.copy(),
                 "costos": matriz_rutas.copy(),
-                "seleccion": coord_actual, # Para pintar de verde
-                "mensaje": mensaje
+                "seleccion": coord_actual,  # Para pintar de verde
+                "mensaje": mensaje,
             }
