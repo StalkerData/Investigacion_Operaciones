@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 
-# --- IMPORTACIONES DE MODELOS ---
+# --- IMPORTACIONES  ---
 # Transporte
 from Modelos.CostoMinimo import CostoMinimo
 from Modelos.EsquinaNoroeste import EsquinaNoroeste
@@ -23,62 +23,34 @@ class UI:
 
     def inicializar_estado(self):
         # --- ESTADO GLOBAL DE NAVEGACIÓN ---
-        if "seccion_app" not in st.session_state:
-            st.session_state.seccion_app = "Home"
-
+        if 'seccion_app' not in st.session_state: st.session_state.seccion_app = 'Home'
+        
         # --- ESTADO TRANSPORTE ---
-        if "pagina" not in st.session_state:
-            st.session_state.pagina = "Menu"
-        if "algoritmo" not in st.session_state:
-            st.session_state.algoritmo = None
-        if "dimensiones" not in st.session_state:
-            st.session_state.dimensiones = (3, 3)
-        if "matriz_costos" not in st.session_state:
-            st.session_state.matriz_costos = pd.DataFrame()
-        if "oferta" not in st.session_state:
-            st.session_state.oferta = pd.DataFrame()
-        if "demanda" not in st.session_state:
-            st.session_state.demanda = pd.DataFrame()
-        if "historial_pasos" not in st.session_state:
-            st.session_state.historial_pasos = []
-        if "paso_actual" not in st.session_state:
-            st.session_state.paso_actual = 0
-        if "costos_originales_clean" not in st.session_state:
-            st.session_state.costos_originales_clean = None
+        if 'pagina' not in st.session_state: st.session_state.pagina = 'Menu'
+        if 'algoritmo' not in st.session_state: st.session_state.algoritmo = None
+        if 'dimensiones' not in st.session_state: st.session_state.dimensiones = (3, 3)
+        if 'matriz_costos' not in st.session_state: st.session_state.matriz_costos = pd.DataFrame()
+        if 'oferta' not in st.session_state: st.session_state.oferta = pd.DataFrame()
+        if 'demanda' not in st.session_state: st.session_state.demanda = pd.DataFrame()
+        if 'historial_pasos' not in st.session_state: st.session_state.historial_pasos = []
+        if 'paso_actual' not in st.session_state: st.session_state.paso_actual = 0
+        if 'costos_originales_clean' not in st.session_state: st.session_state.costos_originales_clean = None
 
         # --- ESTADO SIMPLEX ---
-        if "simplex_page" not in st.session_state:
-            st.session_state["simplex_page"] = 1
-        if "num_vars" not in st.session_state:
-            st.session_state["num_vars"] = 2
-        if "num_rest" not in st.session_state:
-            st.session_state["num_rest"] = 2
-        if "solver_history" not in st.session_state:
-            st.session_state["solver_history"] = None
-        if "current_step" not in st.session_state:
-            st.session_state["current_step"] = 0
+        if 'simplex_page' not in st.session_state: st.session_state['simplex_page'] = 1
+        if 'num_vars' not in st.session_state: st.session_state['num_vars'] = 2
+        if 'num_rest' not in st.session_state: st.session_state['num_rest'] = 2
+        if 'solver_history' not in st.session_state: st.session_state['solver_history'] = None
+        if 'current_step' not in st.session_state: st.session_state['current_step'] = 0
 
         # --- OTROS MÓDULOS ---
-        if "grapher_page" not in st.session_state:
-            st.session_state.grapher_page = 1
-        if "hungaro_page" not in st.session_state:
-            st.session_state.hungaro_page = 1
-
-        # --- ESTADO MODI (NUEVO) ---
-        if "modi_page" not in st.session_state:
-            st.session_state.modi_page = 1
-        if "modi_costos" not in st.session_state:
-            st.session_state.modi_costos = pd.DataFrame()
-        if "modi_oferta" not in st.session_state:
-            st.session_state.modi_oferta = pd.DataFrame()
-        if "modi_demanda" not in st.session_state:
-            st.session_state.modi_demanda = pd.DataFrame()
-        if "modi_pasos" not in st.session_state:
-            st.session_state.modi_pasos = []
-        if "modi_paso_actual" not in st.session_state:
-            st.session_state.modi_paso_actual = 0
-        if "modi_costos_orig" not in st.session_state:
-            st.session_state.modi_costos_orig = None
+        if 'grapher_page' not in st.session_state: st.session_state.grapher_page = 1
+        if 'num_rest_graph' not in st.session_state: st.session_state.num_rest_graph = 2 # <--- AGREGAR ESTO
+        if 'hungaro_page' not in st.session_state: st.session_state.hungaro_page = 1
+        
+        # --- ESTADO MODI ---
+        if 'modi_page' not in st.session_state: st.session_state.modi_page = 1
+        if 'modi_costos_orig' not in st.session_state: st.session_state.modi_costos_orig = None
 
     # --- NAVEGACIÓN GLOBAL ---
     def ir_a_home(self):
@@ -95,9 +67,6 @@ class UI:
         st.session_state.simplex_page = 1
         st.rerun()
 
-    # =========================================================================
-    # SECCIÓN 1: HOME (PANTALLA PRINCIPAL)
-    # =========================================================================
     # =========================================================================
     # SECCIÓN 1: HOME (PANTALLA PRINCIPAL)
     # =========================================================================
@@ -156,7 +125,7 @@ class UI:
         st.divider()
         
         # Pie de página informativo
-        st.caption("© 2024 StalkerData - Herramienta diseñada para fines académicos y profesionales.")
+        st.caption("© 2026 StalkerData - Herramienta diseñada para fines académicos y profesionales.")
 
     # =========================================================================
     # SECCIÓN 2: MÓDULO OPTIMIZACIÓN LINEAL (SIMPLEX & GRAN M)
@@ -642,16 +611,17 @@ class UI:
             if st.button(lbl, type="primary", disabled=es_ultimo):
                 st.session_state.paso_actual += 1
                 st.rerun()
-
     # =========================================================================
-    # SECCIÓN 4: GRAFICO
+    # SECCIÓN 4: GRAFICO (CORREGIDO SIN BUGS)
+    # =========================================================================
+   # =========================================================================
+    # SECCIÓN 4: GRAFICO (SIN FORMULARIO - FLUJO GRAN M)
     # =========================================================================
     def mostrar_grapher_config(self):
         st.title("📈 Graficadora de Región Factible")
-        st.info(
-            "Esta herramienta grafica sistemas de 2 variables (X1, X2) con N restricciones."
-        )
-        num_rest = st.number_input("¿Cuántas restricciones tiene su sistema?", 1, 10, 2)
+        st.info("Sistemas de 2 variables (X1, X2) con N restricciones.")
+        
+        num_rest = st.number_input("Número de restricciones:", 1, 10, st.session_state.get('num_rest_graph', 2))
 
         c1, c2 = st.columns([1, 4])
         if c1.button("🏠 Inicio"):
@@ -663,25 +633,52 @@ class UI:
 
     def mostrar_grapher_ingreso(self):
         st.title("📝 Ingreso de Funciones")
-        n = st.session_state.num_rest_graph
+        n = st.session_state.get('num_rest_graph', 2)
 
-        with st.form("graph_form"):
-            matrix_a, vector_b, ops = [], [], []
-            for i in range(n):
-                cols = st.columns([2, 2, 1, 2])
-                with cols[0]:
-                    x1 = st.number_input(f"X1", key=f"gx1_{i}", value=1.0)
-                with cols[1]:
-                    x2 = st.number_input(f"X2", key=f"gx2_{i}", value=1.0)
-                with cols[2]:
-                    op = st.selectbox("", ["<=", ">=", "="], key=f"gop_{i}")
-                with cols[3]:
-                    b = st.number_input(f"RHS", key=f"gb_{i}", value=10.0)
-                matrix_a.append([x1, x2])
-                vector_b.append(b)
-                ops.append(op)
+        # Listas para capturar los datos sin usar st.form
+        matrix_a, vector_b, ops = [], [], []
 
-            if st.form_submit_button("Generar Gráfica 📊", type="primary"):
+        # Renderizado de filas de inecuaciones
+        for i in range(n):
+            st.markdown(f"**Restricción {i+1}**")
+            cols = st.columns([2, 2, 1, 2])
+            
+            with cols[0]:
+                x1 = st.number_input(f"X1", key=f"gx1_{i}", value=1.0)
+            with cols[1]:
+                x2 = st.number_input(f"X2", key=f"gx2_{i}", value=1.0)
+            with cols[2]:
+                # Usamos label "Op" con "hidden" para que ocupe espacio y se ALINEE con X1 y X2
+                op = st.selectbox(
+                    "Op", 
+                    ["<=", ">=", "="], 
+                    key=f"gop_{i}", 
+                    label_visibility="hidden"
+                )
+            with cols[3]:
+                b = st.number_input(f"RHS", key=f"gb_{i}", value=10.0)
+            
+            matrix_a.append([x1, x2])
+            vector_b.append(b)
+            ops.append(op)
+
+        st.divider()
+
+        # BOTONES AL MISMO NIVEL (Fuera de cualquier formulario)
+        col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 2])
+        
+        with col_btn1:
+            if st.button("⬅️ Atrás"):
+                st.session_state.grapher_page = 1
+                st.rerun()
+        
+        with col_btn2:
+            if st.button("🧹 Limpiar"):
+                st.rerun()
+
+        with col_btn3:
+            # Al no haber formulario, el botón ejecuta la lógica directamente
+            if st.button("Generar Gráfica 📊", type="primary", use_container_width=True):
                 st.session_state.graph_data = {
                     "A": np.array(matrix_a),
                     "b": np.array(vector_b),
@@ -689,88 +686,70 @@ class UI:
                 }
                 st.session_state.grapher_page = 3
                 st.rerun()
-        if st.button("⬅️ Atrás"):
-            st.session_state.grapher_page = 1
-            st.rerun()
 
     def mostrar_grapher_resultado(self):
+        from Metodo.grapher_logic import GrapherLogic
+        import plotly.graph_objects as go
 
         st.title("📊 Resultado Gráfico")
+        
+        if 'graph_data' not in st.session_state:
+            st.session_state.grapher_page = 1
+            st.rerun()
+            return
+
         data = st.session_state.graph_data
         A, b, ops = data["A"], data["b"], data["ops"]
 
-        # 1. Hallar intersecciones (Solo entre funciones, sin ejes)
+        # 1. Hallar intersecciones puras
         intersecciones = GrapherLogic.hallar_intersecciones_puras(A, b)
 
-        # 2. Gráfica con etiquetas de coordenadas (3, 3)
+        # 2. Gráfica con etiquetas (X, Y)
         fig = go.Figure()
-
         max_val = np.max(b) if len(b) > 0 else 10
         limit = max_val * 1.5
         x_vals = np.linspace(0, limit, 200)
 
-        # Dibujar líneas de restricciones
         for i in range(len(b)):
             if A[i, 1] != 0:
                 y_vals = (b[i] - A[i, 0] * x_vals) / A[i, 1]
-                fig.add_trace(
-                    go.Scatter(x=x_vals, y=y_vals, name=f"R{i+1}", mode="lines")
-                )
+                fig.add_trace(go.Scatter(x=x_vals, y=y_vals, name=f"R{i+1}", mode="lines"))
             else:
                 x_const = b[i] / A[i, 0]
                 fig.add_vline(x=x_const, line_dash="dash", annotation_text=f"R{i+1}")
 
-        # Dibujar puntos con etiquetas de texto (X, Y)
         if intersecciones:
             px, py = zip(*intersecciones)
-            fig.add_trace(
-                go.Scatter(
-                    x=px,
-                    y=py,
-                    mode="markers+text",  # Activamos marcadores y texto
-                    text=[
-                        f"({p[0]}, {p[1]})" for p in intersecciones
-                    ],  # Generamos la etiqueta (3, 3)
-                    textposition="top center",  # Posición de la etiqueta
-                    marker=dict(size=10, color="black"),  # Color automático de Plotly
-                    name="Intersecciones",
-                )
-            )
+            fig.add_trace(go.Scatter(
+                x=px, y=py, mode="markers+text",
+                text=[f"({p[0]}, {p[1]})" for p in intersecciones],
+                textposition="top center",
+                marker=dict(size=10, color="black"),
+                name="Intersecciones"
+            ))
 
-        fig.update_layout(
-            xaxis_title="X1",
-            yaxis_title="X2",
-            xaxis_range=[0, limit],
-            yaxis_range=[0, limit],
-        )
+        fig.update_layout(xaxis_title="Variable X1", yaxis_title="Variable X2", xaxis_range=[0, limit], yaxis_range=[0, limit])
         st.plotly_chart(fig, use_container_width=True)
 
-        # 3. Tabla de Puntos (Sin colores chillones)
+        # 3. TABLA EXPRESIVA (Restaurada)
         st.subheader("📍 Puntos de Cruce entre Restricciones")
+        
         if not intersecciones:
-            st.warning(
-                "No se encontraron cruces entre las restricciones en el primer cuadrante."
-            )
+            st.warning("No se encontraron cruces entre las funciones en el cuadrante positivo.")
         else:
-            df_puntos = pd.DataFrame(
-                intersecciones, columns=["Coordenada X1", "Coordenada X2"]
-            )
-
-            # Añadimos la columna de factibilidad con un diseño sobrio
-            df_puntos["Estado"] = [
-                (
-                    "✅ Factible"
-                    if GrapherLogic.es_factible(p, A, b, ops)
-                    else "❌ No Factible"
-                )
+            # Restauramos los nombres descriptivos y los emojis
+            df_puntos = pd.DataFrame(intersecciones, columns=["Coordenada X1", "Coordenada X2"])
+            
+            df_puntos["Estado de Factibilidad"] = [
+                "✅ Factible" if GrapherLogic.es_factible(p, A, b, ops) else "❌ No Factible" 
                 for p in intersecciones
             ]
-
-            # Mostramos la tabla con estilo minimalista
+            
+            # Mostramos la tabla expresiva
             st.dataframe(df_puntos, use_container_width=True)
 
         st.divider()
-        if st.button("⬅️ Volver a Configuración"):
+        if st.button("⬅️ Nueva Gráfica"):
             st.session_state.grapher_page = 1
             st.rerun()
 
