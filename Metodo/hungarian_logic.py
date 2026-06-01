@@ -81,13 +81,12 @@ class HungarianSolver:
 
     @staticmethod
     def _calcular_lineas_minimas(matriz):
-        # Algoritmo simplificado para cubrir ceros
+
         n = matriz.shape[0]
         temp_matriz = matriz == 0
         lineas_h, lineas_v = [], []
 
         while np.any(temp_matriz):
-            # Contar ceros por fila y columna
             ceros_f = np.sum(temp_matriz, axis=1)
             ceros_c = np.sum(temp_matriz, axis=0)
 
@@ -110,9 +109,7 @@ class HungarianSolver:
 
         min_no_cubierto = np.min(matriz[mask])
 
-        # Restar a no cubiertos
         matriz[mask] -= min_no_cubierto
-        # Sumar a intersecciones
         for i in lh:
             for j in lv:
                 matriz[i, j] += min_no_cubierto
@@ -120,7 +117,6 @@ class HungarianSolver:
 
     @staticmethod
     def _obtener_asignacion(matriz):
-        # Busca ceros independientes (Asignación simple)
         n = matriz.shape[0]
         res = np.zeros((n, n), dtype=int)
         temp = matriz == 0

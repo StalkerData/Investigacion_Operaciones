@@ -612,10 +612,7 @@ class UI:
                 st.session_state.paso_actual += 1
                 st.rerun()
     # =========================================================================
-    # SECCIÓN 4: GRAFICO (CORREGIDO SIN BUGS)
-    # =========================================================================
-   # =========================================================================
-    # SECCIÓN 4: GRAFICO (SIN FORMULARIO - FLUJO GRAN M)
+    # SECCIÓN 4: GRAFICO 
     # =========================================================================
     def mostrar_grapher_config(self):
         st.title("📈 Graficadora de Región Factible")
@@ -635,7 +632,6 @@ class UI:
         st.title("📝 Ingreso de Funciones")
         n = st.session_state.get('num_rest_graph', 2)
 
-        # Listas para capturar los datos sin usar st.form
         matrix_a, vector_b, ops = [], [], []
 
         # Renderizado de filas de inecuaciones
@@ -677,7 +673,6 @@ class UI:
                 st.rerun()
 
         with col_btn3:
-            # Al no haber formulario, el botón ejecuta la lógica directamente
             if st.button("Generar Gráfica 📊", type="primary", use_container_width=True):
                 st.session_state.graph_data = {
                     "A": np.array(matrix_a),
@@ -688,9 +683,6 @@ class UI:
                 st.rerun()
 
     def mostrar_grapher_resultado(self):
-        from Metodo.grapher_logic import GrapherLogic
-        import plotly.graph_objects as go
-
         st.title("📊 Resultado Gráfico")
         
         if 'graph_data' not in st.session_state:
@@ -731,13 +723,11 @@ class UI:
         fig.update_layout(xaxis_title="Variable X1", yaxis_title="Variable X2", xaxis_range=[0, limit], yaxis_range=[0, limit])
         st.plotly_chart(fig, use_container_width=True)
 
-        # 3. TABLA EXPRESIVA (Restaurada)
         st.subheader("📍 Puntos de Cruce entre Restricciones")
         
         if not intersecciones:
             st.warning("No se encontraron cruces entre las funciones en el cuadrante positivo.")
         else:
-            # Restauramos los nombres descriptivos y los emojis
             df_puntos = pd.DataFrame(intersecciones, columns=["Coordenada X1", "Coordenada X2"])
             
             df_puntos["Estado de Factibilidad"] = [
