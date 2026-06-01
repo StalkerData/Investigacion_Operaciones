@@ -1,122 +1,99 @@
-# 🚛 Sistema de Optimización de Transporte & Simplex
+# 🚛 Optimizador Integral de Investigación de Operaciones (IO)
 
 ![Python](https://img.shields.io/badge/Python-3.13-blue?style=for-the-badge&logo=python&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![NumPy](https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white)
-![Status](https://img.shields.io/badge/Estado-Prototipo%20v1.2.0-orange?style=for-the-badge)
+![Status](https://img.shields.io/badge/Estado-Estable%20v2.0.0-green?style=for-the-badge)
 
-Una herramienta educativa e interactiva diseñada para resolver problemas clásicos de **Investigación de Operaciones**. Implementada con una arquitectura **MVC (Modelo-Vista-Controlador)** limpia, permite visualizar paso a paso el funcionamiento de los algoritmos de transporte y el método Simplex.
-
----
-
-## 📋 Características Principales
-
-### 1. 🚚 Módulo de Transporte
-Resuelve problemas de asignación de oferta y demanda minimizando costos.
-*   **Algoritmos Soportados:**
-    *   📉 **Esquina Noroeste:** Método básico basado en posición.
-    *   💲 **Costo Mínimo:** Prioriza las rutas más baratas.
-    *   🦅 **Aproximación de Vogel:** Método avanzado basado en penalizaciones (costo de oportunidad).
-*   **Visualización Avanzada:**
-    *   Manejo de rutas inexistentes o bloqueadas (marcadas como `X`).
-    *   Visualización asimétrica de penalizaciones en Vogel (Filas a la derecha, Columnas abajo).
-    *   **Paso a Paso:** Navegación temporal (Anterior/Siguiente) para ver cómo se llena la matriz.
-    *   **Feedback Visual:** Colores intuitivos (Verde para selección, Rojo para bloqueos, Azul para cabeceras).
-
-### 2. 📐 Módulo Simplex
-Resuelve problemas de programación lineal (Maximización).
-*   **Capacidades:**
-    *   Configuración dinámica de variables ($X_n$) y restricciones.
-    *   Generación automática de variables de holgura ($S_n$).
-*   **Didáctica:**
-    *   Muestra la tabla Simplex en cada iteración.
-    *   Resalta la **Fila Pivote**, **Columna Pivote** y el **Elemento Pivote** en amarillo/azul.
-    *   Explica qué variable entra y cuál sale de la base.
+Una plataforma educativa avanzada diseñada para resolver y visualizar paso a paso los algoritmos más críticos de la **Investigación de Operaciones**. Construida bajo una arquitectura **MVC** robusta, esta herramienta permite a estudiantes y profesionales entender la lógica matemática detrás de la optimización.
 
 ---
 
-## 🏗️ Arquitectura del Proyecto
+## 📋 Módulos y Características
 
-El proyecto sigue un patrón de diseño **MVC** estricto para desacoplar la lógica matemática de la interfaz gráfica.
+### 1. 🚚 Modelos de Transporte
+Soluciones iniciales para problemas de distribución.
+*   **Algoritmos:** Esquina Noroeste, Costo Mínimo y Aproximación de Vogel.
+*   **Visualización:** Mega-matriz integrada con Oferta y Demanda.
+*   **Robustez:** Manejo automático de rutas inexistentes (`X`) y problemas degenerados.
+
+### 2. 📐 Optimización Lineal (Simplex & Gran M)
+Resolución de problemas de programación lineal con N variables.
+*   **Simplex Clásico:** Especializado en maximización estándar con restricciones `≤`.
+*   **Método de la Gran M:** Soporte completo para **Maximización y Minimización** con restricciones `≤`, `≥` e `=`.
+*   **Didáctica:** Resaltado dinámico de fila/columna pivote y variables que entran/salen de la base.
+
+### 3. 🔄 Optimización de Transporte (MODI)
+El motor de optimización más avanzado de la suite.
+*   **Optimización Real:** No solo evalúa, sino que ejecuta la **redistribución de carga** mediante la detección de ciclos (loops).
+*   **Transparencia Matemática:** Desglose completo de ecuaciones para multiplicadores ($u_i, v_j$) e índices de mejora ($\Delta_{ij}$).
+*   **Manejo de Degeneración:** Uso de $\epsilon$ (épsilon) para resolver sistemas de ecuaciones en bases incompletas.
+
+### 4. 🎭 Método Húngaro (Asignación)
+Optimización de tareas y recursos.
+*   **Visualización:** Proceso de reducción de ceros y trazado de líneas mínimas.
+*   **Resultado:** Resaltado de la asignación óptima y cálculo automático del costo total.
+
+### 5. 📈 Graficadora Lineal 2D
+Visualización geométrica de la optimización.
+*   **Región Factible:** Renderizado dinámico de inecuaciones usando **Plotly**.
+*   **Análisis de Vértices:** Identificación automática de puntos de intersección y validación de factibilidad (✅/❌).
+
+---
+
+## 🏗️ Arquitectura del Proyecto (MVC)
+
+El proyecto separa estrictamente la lógica de cálculo de la interfaz de usuario:
 
 ```text
 .
-├── Appy.py                  # 🎮 Controlador: Punto de entrada de la aplicación
-├── dockerfile               # 🐳 Configuración para despliegue en contenedores
-├── requirements.txt         # 📦 Dependencias del proyecto
-├── Metodo/                  # 🧠 Lógica Simplex
-│   └── simplex_logic.py     # Motor de resolución del método Simplex
-├── Modelos/                 # 🧠 Lógica Transporte (Modelos Puros)
-│   ├── CostoMinimo.py       # Lógica de Costo Mínimo (NumPy)
-│   ├── EsquinaNoroeste.py   # Lógica de Esquina Noroeste (NumPy)
-│   └── Vogel.py             # Lógica de Vogel y Penalizaciones (NumPy)
-└── Pagina/                  # 🎨 Vista (Interfaz de Usuario)
-    └── Paginas.py           # UI unificada con Streamlit (Renderizado y Estilos)
+├── Appy.py                  # 🎮 Controlador Principal
+├── dockerfile               # 🐳 Configuración de Contenedor (Debian-slim)
+├── requirements.txt         # 📦 Dependencias (Versiones fijas)
+├── Metodo/                  # 🧠 Motores de Optimización
+│   ├── big_m_logic.py       # Lógica Gran M
+│   ├── grapher_logic.py     # Álgebra de intersecciones
+│   ├── hungarian_logic.py   # Algoritmo Húngaro
+│   ├── modi_logic.py        # Optimizador MODI (Ciclos y Dualidad)
+│   └── simplex_logic.py     # Simplex Estándar
+├── Modelos/                 # 🧠 Modelos de Transporte (Generadores)
+│   ├── CostoMinimo.py
+│   ├── EsquinaNoroeste.py
+│   └── Vogel.py
+└── Pagina/                  # 🎨 Vista (Streamlit)
+    └── Paginas.py           # UI Unificada y Estilos Dinámicos
 ```
 
 ---
 
-## 🚀 Instalación y Uso
+## 🚀 Instalación y Despliegue
 
-### Opción A: Ejecución Local (Recomendado para desarrollo)
+### Local
+```bash
+git clone https://github.com/StalkerData/investigacion_operaciones.git
+pip install -r requirements.txt
+streamlit run Appy.py
+```
 
-1.  **Clonar el repositorio:**
-    ```bash
-    git clone https://github.com/StalkerData/tu-repo.git
-    cd tu-repo
-    ```
-
-2.  **Crear un entorno virtual (Opcional pero recomendado):**
-    ```bash
-    python -m venv venv
-    # En Windows:
-    venv\Scripts\activate
-    # En Mac/Linux:
-    source venv/bin/activate
-    ```
-
-3.  **Instalar dependencias:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-4.  **Ejecutar la aplicación:**
-    ```bash
-    streamlit run Appy.py
-    ```
-
-### Opción B: Docker (Recomendado para despliegue)
-
-El proyecto está optimizado para correr en contenedores ligeros usando `python:3.13-slim`.
-
-1.  **Construir la imagen:**
-    ```bash
-    docker build -t io-app .
-    ```
-
-2.  **Correr el contenedor:**
-    ```bash
-    docker run -p 8501:8501 io-app
-    ```
-    Accede a la aplicación en: `http://localhost:8501`
+### Docker
+```bash
+docker build -t io-suite .
+docker run -p 8501:8501 io-suite
+```
 
 ---
 
-## 🛠️ Tecnologías Utilizadas
-
-| Tecnología | Uso |
-| :--- | :--- |
-| **Python 3.13** | Lenguaje base. |
-| **Streamlit** | Framework para la interfaz web interactiva. |
-| **NumPy** | Cálculos matriciales de alto rendimiento para los modelos de transporte. |
-| **Pandas** | Estructuración de datos y estilizado de tablas (DataFrames). |
-| **Docker** | Contenización y despliegue reproducible. |
+## 🛠️ Tecnologías
+*   **Python 3.13**: Core del sistema.
+*   **NumPy**: Procesamiento matricial de alto rendimiento.
+*   **Pandas**: Gestión de datos y estilizado de tablas.
+*   **Plotly**: Gráficos interactivos.
+*   **Streamlit**: Interfaz web reactiva.
 
 ---
 
 ## ✒️ Autor
-
 **StalkerData**
-*   Desarrollador Full Stack & Data Enthusiast.
-*   [GitHub Profile](https://github.com/StalkerData)
+*   [GitHub](https://github.com/StalkerData)
+*   Proyecto desarrollado con enfoque en la enseñanza de la Investigación de Operaciones.
